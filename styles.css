@@ -1,0 +1,167 @@
+/* Toàn trang */
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background-color: #f5f6fa;
+  color: #333;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 280px;
+  background: #ffffff;
+  border-right: 1px solid #e5e5e5;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar-wrapper {
+  padding: 25px 20px;
+}
+
+/* Header */
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.sidebar-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0d6efd;
+  letter-spacing: 1px;
+}
+
+.sidebar-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+/* MENU */
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu-item {
+  margin-bottom: 10px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: transparent;
+  color: #333;
+  text-decoration: none;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.sidebar-link:hover {
+  background-color: #0d6efd;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(13, 110, 253, 0.3);
+}
+
+.sidebar-link .icon {
+  color: #0d6efd;
+  margin-right: 10px;
+  transition: 0.3s;
+}
+
+.sidebar-link:hover .icon {
+  color: #fff;
+}
+
+.arrow {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* Submenu */
+.sidebar-submenu {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* FORM TÌM KIẾM */
+.search-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#searchInput {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+#searchInput:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 4px rgba(13, 110, 253, 0.4);
+  outline: none;
+}
+
+.btn-search {
+  background-color: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.btn-search:hover {
+  background-color: #0b5ed7;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  margin-left: 280px;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.main-content-inner {
+  height: 100%;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+  border-radius: 0;
+}
+
+/* Cuộn mượt */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
