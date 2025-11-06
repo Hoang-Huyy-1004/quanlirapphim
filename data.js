@@ -2,24 +2,48 @@
 const cinemas = [
   {
     name: "Lotte Cinema Cần Thơ",
-    address: "Tầng 1, GO! Cần Thơ, Lô 1, KDC Hưng Phú 1, P. Hưng Phú, Q. Cái Răng",
+    address: "Tầng 1, GO! Cần Thơ, Lô 1, KDC Hưng Phú 1, P. Hưng Phú, Q. Cái Răng, TP.Cần Thơ",
     latitude: 10.014288,
     longitude: 105.784736,
     province: "Cần Thơ",
+    screens: 5,
+    movies: ["Cục Vàng Của Ngoại", "Phá Đám - Sinh Nhật Mẹ", "Tử Chiến Trên Không", "Nhà Ma Xó"]
   },
   {
     name: "CGV Vincom Xuân Khánh",
-    address: "Tầng 5, 209 Đường 30/04, P. Xuân Khánh, Q. Ninh Kiều",
+    address: "Tầng 5, 209 Đường 30/04, P. Xuân Khánh, Q. Ninh Kiều, TP.Cần Thơ",
     latitude: 10.024642,
     longitude: 105.769987,
     province: "Cần Thơ",
+    screens: 6,
+    movies: ["Cục Vàng Của Ngoại", "Phá Đám - Sinh Nhật Mẹ", "Tử Chiến Trên Không", "Nhà Ma Xó"]
   },
   {
     name: "Lotte Cinema Ninh Kiều",
-    address: "Tầng 3, Lotte Mart, 84 Mậu Thân, P. An Hòa, Q. Ninh Kiều",
+    address: "Tầng 3, Lotte Mart, 84 Mậu Thân, P. An Hòa, Q. Ninh Kiều, TP.Cần Thơ",
     latitude: 10.034794,
     longitude: 105.761687,
     province: "Cần Thơ",
+    screens: 4,
+    movies: ["Cục Vàng Của Ngoại", "Phá Đám - Sinh Nhật Mẹ", "Tử Chiến Trên Không", "Nhà Ma Xó"]
+  },
+  {
+    name: "CGV Sense Cityscape",
+    address: "Lầu 3, Sense City, 1 Đại Lộ Hòa Bình, Q.Ninh Kiều, TP.Cần Thơ",
+    latitude: 10.034418, 
+    longitude: 105.785667,
+    province: "Cần Thơ",
+    screens: 5,
+    movies: ["Cục Vàng Của Ngoại", "Phá Đám - Sinh Nhật Mẹ", "Tử Chiến Trên Không", "Nhà Ma Xó"]
+  },
+  {
+    name: "CGV Vincom Hùng Vương",
+    address: "02 Hùng Vương, Quận Ninh Kiều, TP. Cần Thơ",
+    latitude: 10.045367,
+    longitude: 105.779609,
+    province: "Cần Thơ",
+    screens: 5,
+    movies: ["Cục Vàng Của Ngoại", "Phá Đám - Sinh Nhật Mẹ", "Tử Chiến Trên Không", "Nhà Ma Xó"]
   },
   {
     name: "CGV Vincom Vĩnh Long",
@@ -27,6 +51,8 @@ const cinemas = [
     latitude: 10.25333,
     longitude: 105.97114,
     province: "Vĩnh Long",
+    screens: 3,
+    movies: ["Cục Vàng Của Ngoại", "Phá Đám - Sinh Nhật Mẹ", "Tử Chiến Trên Không", "Nhà Ma Xó"]
   },
   {
     name: "CGV Vincom Vị Thanh",
@@ -34,6 +60,26 @@ const cinemas = [
     latitude: 9.78455,
     longitude: 105.46996,
     province: "Hậu Giang",
+    screens: 3,
+    movies: ["Cục Vàng Của Ngoại", "Phá Đám - Sinh Nhật Mẹ", "Tử Chiến Trên Không", "Nhà Ma Xó"]
+  },
+  {
+    name: "CGV Vincom Vĩnh Long",
+    address: "Tầng 4, Vincom Plaza, 55 Phạm Thái Bường, P. 4",
+    latitude: 10.25333,
+    longitude: 105.97114,
+    province: "Vĩnh Long",
+    screens: 3,
+    movies: ["Mai", "Lật Mặt 7"],
+  },
+  {
+    name: "CGV Vincom Vị Thanh",
+    address: "Tầng 4, Vincom Plaza, 1 Đường 3/2, KV 3, P. 5",
+    latitude: 9.78455,
+    longitude: 105.46996,
+    province: "Hậu Giang",
+    screens: 3,
+    movies: ["Lật Mặt 7", "Exhuma"],
   },
   {
     name: "DCINE Sóc Trăng",
@@ -41,6 +87,8 @@ const cinemas = [
     latitude: 9.599237,
     longitude: 105.978922,
     province: "Sóc Trăng",
+    screens: 4,
+    movies: ["Godzilla x Kong", "Exhuma"],
   },
   {
     name: "CGV Vincom Sóc Trăng",
@@ -48,13 +96,17 @@ const cinemas = [
     latitude: 9.60219,
     longitude: 105.977523,
     province: "Sóc Trăng",
+    screens: 3,
+    movies: ["Mai", "Lật Mặt 7"],
   },
   {
     name: "Beta TRMALL Phú Quốc",
     address: "Tầng 3, TR MALL, Sonasea, Đường Bào Trương, Xã Dương Tơ",
     latitude: 10.16411,
     longitude: 103.984672,
-    province: "Kiên Giang", // Phú Quốc thuộc Kiên Giang
+    province: "Kiên Giang",
+    screens: 4,
+    movies: ["Exhuma", "Mai"],
   },
   {
     name: "Cinestar Kiên Giang",
@@ -62,6 +114,8 @@ const cinemas = [
     latitude: 9.956155,
     longitude: 105.076944,
     province: "Kiên Giang",
+    screens: 4,
+    movies: ["Lật Mặt 7", "Godzilla x Kong"],
   },
   {
     name: "CGV Vincom Rạch Giá",
@@ -69,13 +123,17 @@ const cinemas = [
     latitude: 9.974675,
     longitude: 105.0879,
     province: "Kiên Giang",
+    screens: 5,
+    movies: ["Mai", "Exhuma"],
   },
   {
     name: "EVG Thắng Lợi Cinema",
     address: "18 Lê Lợi, P. Thanh Vân",
     latitude: 10.405676,
     longitude: 105.467762,
-    province: "Vĩnh Long", // KHẢO SÁT: mình gán Vĩnh Long theo vị trí tọa độ — bạn kiểm tra lại nếu cần
+    province: "Vĩnh Long",
+    screens: 3,
+    movies: ["Lật Mặt 7"],
   },
   {
     name: "Lotte Cinema Long Xuyên",
@@ -83,6 +141,8 @@ const cinemas = [
     latitude: 10.376906,
     longitude: 105.434292,
     province: "An Giang",
+    screens: 3,
+    movies: ["Mai", "Exhuma"],
   },
   {
     name: "Galaxy Long Xuyên",
@@ -90,6 +150,8 @@ const cinemas = [
     latitude: 10.377102,
     longitude: 105.434009,
     province: "An Giang",
+    screens: 4,
+    movies: ["Lật Mặt 7", "Godzilla x Kong"],
   },
   {
     name: "CGV Vincom Cao Lãnh",
@@ -97,5 +159,7 @@ const cinemas = [
     latitude: 10.455622,
     longitude: 105.64197,
     province: "Đồng Tháp",
+    screens: 3,
+    movies: ["Mai", "Lật Mặt 7"],
   },
 ];
