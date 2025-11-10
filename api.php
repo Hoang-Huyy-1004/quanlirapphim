@@ -3,6 +3,7 @@ $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "cinema_gis";
+$port = 3306; //Đổi lại port của mình đang sử dụng
 
 // Cho phép JavaScript từ bất kỳ đâu gọi (CORS)
 header("Access-Control-Allow-Origin: *");
@@ -10,7 +11,7 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
 // Tạo kết nối
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($servername, $username, $password, $dbname, $port);
 if ($conn->connect_error) {
     die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
 }
