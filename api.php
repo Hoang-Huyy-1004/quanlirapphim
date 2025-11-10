@@ -4,7 +4,8 @@ $username = "root";
 $password = "";
 $dbname = "cinema_gis";
 $port = 3307;
-
+// $port = 3306; 
+//Đổi lại port của mình đang sử dụng
 // Cho phép JavaScript từ bất kỳ đâu gọi (CORS)
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
