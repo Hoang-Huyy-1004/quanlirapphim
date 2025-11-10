@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   // 1️⃣ Khởi tạo bản đồ
-  var map = L.map("map").setView([10.0336, 105.7876], 11);
+  // preferCanvas giúp vẽ nhiều hình (polygon) mượt hơn
+  var map = L.map("map", { preferCanvas: true }).setView([10.0336, 105.7876], 11);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -12,12 +13,16 @@ document.addEventListener("DOMContentLoaded", function () {
   let userLocation = null;
   let routingControl = null;
   let chartDrawn = false;
+  let provincesLayer = null; // Lớp GeoJSON các tỉnh
 
   let cinemas = [];
   const apiUrl = "http://localhost/quanlirapphim/api.php";
 
   async function loadDataAndInit() {
     try {
+      // Tải và hiển thị polygon ranh giới tỉnh trước (để các marker sau nằm trên cùng)
+      loadVietnamProvinces();
+
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Không thể tải CSDL rạp phim");
 
@@ -33,6 +38,57 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (error) {
       console.error(error);
       alert("Lỗi kết nối CSDL: " + error.message);
+    }
+  }
+
+  // 2.1️⃣ Tải và vẽ polygon ranh giới tỉnh/thành từ file GeoJSON
+  async function loadVietnamProvinces() {
+    try {
+      const res = await fetch("gadm41_VNM_1.json");
+      if (!res.ok) throw new Error("Không thể tải GeoJSON tỉnh/thành");
+      const geojson = await res.json();
+
+      provincesLayer = L.geoJSON(geojson, {
+        style: function (feature) {
+          return {
+            color: "#666",
+            weight: 1,
+            fillColor: "#2b8cbe",
+            fillOpacity: 0.05,
+          };
+        },
+        onEachFeature: function (feature, layer) {
+          const name =
+            (feature.properties && (feature.properties.NAME_1 || feature.properties.VARNAME_1)) ||
+            "Không rõ";
+          // Tooltip tên tỉnh/thành
+          layer.bindTooltip(name, { sticky: true });
+
+          // Hiệu ứng hover
+          layer.on({
+            mouseover: function (e) {
+              const target = e.target;
+              target.setStyle({
+                weight: 2,
+                color: "#ff7800",
+                fillOpacity: 0.15,
+              });
+              if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                target.bringToFront();
+              }
+            },
+            mouseout: function (e) {
+              provincesLayer.resetStyle(e.target);
+            },
+            click: function (e) {
+              // Phóng tới polygon khi click
+              map.fitBounds(e.target.getBounds(), { padding: [20, 20] });
+            },
+          });
+        },
+      }).addTo(map);
+    } catch (err) {
+      console.error(err);
     }
   }
 
