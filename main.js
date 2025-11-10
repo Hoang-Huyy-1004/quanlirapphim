@@ -12,32 +12,30 @@ document.addEventListener("DOMContentLoaded", function () {
   let userLocation = null;
   let routingControl = null;
   let chartDrawn = false;
-  
+
   let cinemas = [];
-  const apiUrl = 'http://localhost/HTTT_DL/quanlirapphim/api.php';
+  const apiUrl = "http://localhost/quanlirapphim/api.php";
 
-  
   async function loadDataAndInit() {
-      try {
-          const response = await fetch(apiUrl);
-          if (!response.ok) throw new Error('Không thể tải CSDL rạp phim');
-          
-          cinemas = await response.json();
+    try {
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Không thể tải CSDL rạp phim");
 
-          getLocation(); 
-          renderMarkers(cinemas); 
-          setupPopupListener(); 
-          
-          setupSearch();
-          setupFilter();
-          setupStatsChart();
+      cinemas = await response.json();
+      updateStatCards(cinemas);
+      getLocation();
+      renderMarkers(cinemas);
+      setupPopupListener();
 
-      } catch (error) {
-          console.error(error);
-          alert("Lỗi kết nối CSDL: " + error.message);
-      }
+      setupSearch();
+      setupFilter();
+      setupStatsChart();
+    } catch (error) {
+      console.error(error);
+      alert("Lỗi kết nối CSDL: " + error.message);
+    }
   }
-  
+
   function renderMarkers(list) {
     markers.forEach((m) => map.removeLayer(m));
     markers = [];
@@ -90,9 +88,9 @@ document.addEventListener("DOMContentLoaded", function () {
   function showPosition(position) {
     const lat = position.coords.latitude;
     const lon = position.coords.longitude;
-    userLocation = L.latLng(lat, lon); 
+    userLocation = L.latLng(lat, lon);
 
-    map.setView(userLocation, 14); 
+    map.setView(userLocation, 14);
 
     L.marker(userLocation, {
       icon: L.icon({
@@ -137,30 +135,78 @@ document.addEventListener("DOMContentLoaded", function () {
       routingControl = null;
     }
     routingControl = L.Routing.control({
-      waypoints: [L.latLng(userLocation.lat, userLocation.lng), destinationLatLng],
+      waypoints: [
+        L.latLng(userLocation.lat, userLocation.lng),
+        destinationLatLng,
+      ],
       routeWhileDragging: true,
       show: true,
-      createMarker: function () { return null; },
+      createMarker: function () {
+        return null;
+      },
     }).addTo(map);
     map.closePopup();
   }
-  
+
   // 3️⃣ Xử lý tìm kiếm
   function setupSearch() {
-      const searchForm = document.getElementById("cinemaSearchForm");
-      const searchInput = document.getElementById("searchInput");
-      searchForm.addEventListener("submit", function (e) {
-          e.preventDefault();
-          const query = searchInput.value.trim().toLowerCase();
-          if (!query) { renderMarkers(cinemas); return; }
-          const results = cinemas.filter(
-              (c) =>
-                  c.name.toLowerCase().includes(query) ||
-                  c.address.toLowerCase().includes(query) ||
-                  (c.movies && c.movies.some((movie) => movie.toLowerCase().includes(query)))
-          );
-          renderMarkers(results);
-      });
+    const searchForm = document.getElementById("cinemaSearchForm");
+    const searchInput = document.getElementById("searchInput");
+    searchForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const query = searchInput.value.trim().toLowerCase();
+      if (!query) {
+        renderMarkers(cinemas);
+        return;
+      }
+      const results = cinemas.filter(
+        (c) =>
+          c.name.toLowerCase().includes(query) ||
+          c.address.toLowerCase().includes(query) ||
+          (c.movies &&
+            c.movies.some((movie) => movie.toLowerCase().includes(query)))
+      );
+      renderMarkers(results);
+    });
+  }
+
+  // HÀM MỚI: Cập nhật các thẻ thống kê nhanh
+  function updateStatCards(cinemas) {
+    if (!cinemas) return;
+
+    // 1. Tổng số rạp
+    const totalCinemas = cinemas.length;
+
+    // 2. Tổng số tỉnh
+    // Tạo một Set (bộ) chỉ chứa các giá trị province duy nhất
+    const uniqueProvinces = new Set(
+      cinemas.map((c) => c.province).filter((p) => p)
+    );
+    const totalProvinces = uniqueProvinces.size;
+
+    // 3. Tổng phòng chiếu (lấy từ cột 'screens')
+    const totalScreens = cinemas.reduce((acc, cinema) => {
+      // Dùng Number() để cộng, nếu cinema.screens bị null thì coi như là 0
+      return acc + (Number(cinema.screens) || 0);
+    }, 0);
+
+    // 4. Tổng số phim đang chiếu (unique) (lấy từ cột 'movies')
+    const allMovies = new Set();
+    cinemas.forEach((cinema) => {
+      // File api.php đã tự động chuyển 'movies' thành mảng
+      if (cinema.movies && Array.isArray(cinema.movies)) {
+        cinema.movies.forEach((movie) => allMovies.add(movie));
+      }
+    });
+    const totalUniqueMovies = allMovies.size;
+
+    // Cập nhật số liệu lên HTML
+    document.getElementById("statTotalCinemas").innerText = totalCinemas;
+    document.getElementById("statTotalProvinces").innerText = totalProvinces;
+    document.getElementById("statTotalScreens").innerText = totalScreens;
+
+    // Cập nhật ô cuối cùng với số phim
+    document.getElementById("statCanThoCinemas").innerText = totalUniqueMovies;
   }
 
   // 4️⃣ Xử lý lọc
@@ -179,45 +225,71 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // 5️⃣ Xử lý thống kê
   function setupStatsChart() {
-      const statsCollapseEl = document.getElementById("statsCollapse");
-      statsCollapseEl.addEventListener("shown.bs.collapse", function () {
-          if (chartDrawn) return;
-          if (typeof cinemas === 'undefined' || cinemas.length === 0) return;
-          
-          const provinceCounts = cinemas.reduce((acc, cinema) => {
-              const province = cinema.province || "Không rõ";
-              acc[province] = (acc[province] || 0) + 1;
-              return acc;
-          }, {});
-          const labels = Object.keys(provinceCounts);
-          const data = Object.values(provinceCounts);
-          const ctx = document.getElementById("sidebarChart");
-          if (!ctx) return;
-          if (myChart) myChart.destroy();
-          myChart = new Chart(ctx.getContext("2d"), {
-              type: "pie",
-              data: {
-                  labels: labels,
-                  datasets: [{
-                      label: "Số lượng rạp",
-                      data: data,
-                      backgroundColor: ["rgba(255, 99, 132, 0.7)", "rgba(54, 162, 235, 0.7)", "rgba(255, 206, 86, 0.7)", "rgba(75, 192, 192, 0.7)", "rgba(153, 102, 255, 0.7)", "rgba(255, 159, 64, 0.7)", "rgba(201, 203, 207, 0.7)"],
-                      borderColor: ["rgb(255, 99, 132)", "rgb(54, 162, 235)", "rgb(255, 206, 86)", "rgb(75, 192, 192)", "rgb(153, 102, 255)", "rgb(255, 159, 64)", "rgb(201, 203, 207)"],
-                      borderWidth: 1
-                  }]
-              },
-              options: {
-                  responsive: true,
-                  maintainAspectRatio: true,
-                  plugins: {
-                      legend: { display: true, position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } },
-                      title: { display: true, text: "Tỉ Lệ Rạp Theo Tỉnh", font: { size: 14 } }
-                  }
-              }
-          });
-          chartDrawn = true;
+    const statsCollapseEl = document.getElementById("statsCollapse");
+    statsCollapseEl.addEventListener("shown.bs.collapse", function () {
+      if (chartDrawn) return;
+      if (typeof cinemas === "undefined" || cinemas.length === 0) return;
+
+      const provinceCounts = cinemas.reduce((acc, cinema) => {
+        const province = cinema.province || "Không rõ";
+        acc[province] = (acc[province] || 0) + 1;
+        return acc;
+      }, {});
+      const labels = Object.keys(provinceCounts);
+      const data = Object.values(provinceCounts);
+      const ctx = document.getElementById("sidebarChart");
+      if (!ctx) return;
+      if (myChart) myChart.destroy();
+      myChart = new Chart(ctx.getContext("2d"), {
+        type: "pie",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Số lượng rạp",
+              data: data,
+              backgroundColor: [
+                "rgba(255, 99, 132, 0.7)",
+                "rgba(54, 162, 235, 0.7)",
+                "rgba(255, 206, 86, 0.7)",
+                "rgba(75, 192, 192, 0.7)",
+                "rgba(153, 102, 255, 0.7)",
+                "rgba(255, 159, 64, 0.7)",
+                "rgba(201, 203, 207, 0.7)",
+              ],
+              borderColor: [
+                "rgb(255, 99, 132)",
+                "rgb(54, 162, 235)",
+                "rgb(255, 206, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(153, 102, 255)",
+                "rgb(255, 159, 64)",
+                "rgb(201, 203, 207)",
+              ],
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: "bottom",
+              labels: { boxWidth: 12, font: { size: 10 } },
+            },
+            title: {
+              display: true,
+              text: "Tỉ Lệ Rạp Theo Tỉnh",
+              font: { size: 14 },
+            },
+          },
+        },
       });
+      chartDrawn = true;
+    });
   }
-  
+
   loadDataAndInit();
 });

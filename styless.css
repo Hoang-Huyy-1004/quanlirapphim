@@ -165,3 +165,25 @@ body {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
+
+/* CSS CHO THẺ THỐNG KÊ NHANH */
+.stat-card {
+  padding: 12px;
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+  font-size: 1.75rem; /* Làm số to hơn */
+  font-weight: 700;
+  margin: 0 0 5px 0;
+}
+
+.stat-card p {
+  font-size: 0.6rem; /* Làm chữ nhỏ hơn */
+  margin: 0;
+  opacity: 0.9;
+  font-weight: 500;
+}

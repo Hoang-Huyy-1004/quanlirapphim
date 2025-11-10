@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // API của chúng ta trỏ đến tệp PHP
-  const apiUrl = 'http://localhost/HTTT_DL/quanlirapphim/api.php';
+  const apiUrl = 'http://localhost/quanlirapphim/api.php';
 
   const form = document.getElementById("cinema-form");
   const tableBody = document.getElementById("cinema-table-body");
