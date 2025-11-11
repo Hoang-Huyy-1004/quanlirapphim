@@ -1,37 +1,54 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // 1️⃣ Khởi tạo bản đồ
+  // Khởi tạo bản đồ
   // preferCanvas giúp vẽ nhiều hình (polygon) mượt hơn
-  var map = L.map("map", { preferCanvas: true }).setView([10.0336, 105.7876], 11);
+  var map = L.map("map", { preferCanvas: true }).setView(
+    [10.0336, 105.7876],
+    11
+  );
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
 
-  // 2️⃣ Quản lý các biến
+  // Quản lý các biến
   let markers = [];
   let myChart = null;
   let userLocation = null;
   let routingControl = null;
   let chartDrawn = false;
   let provincesLayer = null; // Lớp GeoJSON các tỉnh
+  let provinceCinemaCounts = {};
+  const provinceColors = {
+    "Cần Thơ": "#ff6384",
+    "Vĩnh Long": "#36a2eb",
+    "Hậu Giang": "#ffcd56",
+    "Sóc Trăng": "#4bc0c0",
+    "Kiên Giang": "#9966ff",
+    "An Giang": "#ff9f40",
+    "Đồng Tháp": "#c9cbcf",
+  };
 
   let cinemas = [];
-  const apiUrl = "http://localhost/quanlirapphim/api.php";
+  const apiUrl = "http://localhost/HTTT_DL/quanlirapphim/api.php";
+  // const apiUrl = "http://localhost/quanlirapphim/api.php";
 
   async function loadDataAndInit() {
     try {
-      // Tải và hiển thị polygon ranh giới tỉnh trước (để các marker sau nằm trên cùng)
-      loadVietnamProvinces();
+      await loadVietnamProvinces(); // tải GeoJSON trước
 
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Không thể tải CSDL rạp phim");
 
       cinemas = await response.json();
+      console.log("✅ Dữ liệu từ API:", cinemas);
+
+      calculateProvinceCounts(cinemas);
+      updateProvinceColors();
+
       updateStatCards(cinemas);
       getLocation();
       renderMarkers(cinemas);
       setupPopupListener();
-
       setupSearch();
       setupFilter();
       setupStatsChart();
@@ -41,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // 2.1️⃣ Tải và vẽ polygon ranh giới tỉnh/thành từ file GeoJSON
+  // Tải và vẽ polygon ranh giới tỉnh/thành từ file GeoJSON
   async function loadVietnamProvinces() {
     try {
       const res = await fetch("gadm41_VNM_1.json");
@@ -49,47 +66,129 @@ document.addEventListener("DOMContentLoaded", function () {
       const geojson = await res.json();
 
       provincesLayer = L.geoJSON(geojson, {
-        style: function (feature) {
+        style: function () {
           return {
-            color: "#666",
+            color: "#444",
             weight: 1,
-            fillColor: "#2b8cbe",
-            fillOpacity: 0.05,
+            fillColor: "#cccccc",
+            fillOpacity: 0.3,
           };
         },
         onEachFeature: function (feature, layer) {
           const name =
-            (feature.properties && (feature.properties.NAME_1 || feature.properties.VARNAME_1)) ||
+            feature.properties?.NAME_1 ||
+            feature.properties?.VARNAME_1 ||
             "Không rõ";
-          // Tooltip tên tỉnh/thành
+
           layer.bindTooltip(name, { sticky: true });
 
-          // Hiệu ứng hover
+          layer.options.originalStyle = {
+            color: "#444",
+            weight: 1,
+            fillColor: "#cccccc",
+            fillOpacity: 0.3,
+          };
+
           layer.on({
             mouseover: function (e) {
               const target = e.target;
               target.setStyle({
                 weight: 2,
-                color: "#ff7800",
-                fillOpacity: 0.15,
+                color: "#ff6600",
+                fillOpacity: 0.9,
               });
               if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
                 target.bringToFront();
               }
             },
             mouseout: function (e) {
-              provincesLayer.resetStyle(e.target);
+              const target = e.target;
+              const original = target.options.originalStyle;
+              target.setStyle(original);
             },
             click: function (e) {
-              // Phóng tới polygon khi click
               map.fitBounds(e.target.getBounds(), { padding: [20, 20] });
             },
           });
         },
       }).addTo(map);
+
+      provincesLayer.bringToBack();
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi tải GeoJSON:", err);
     }
+  }
+
+  // Đếm số lượng rạp theo tỉnh
+  function calculateProvinceCounts(cinemas) {
+    provinceCinemaCounts = cinemas.reduce((acc, c) => {
+      const province = c.province?.trim();
+      if (province) acc[province] = (acc[province] || 0) + 1;
+      return acc;
+    }, {});
+    console.log("✅ Số lượng rạp theo tỉnh:", provinceCinemaCounts);
+  }
+
+  // Màu theo số lượng rạp
+  function getColorByCount(provinceName, count) {
+    const baseColor = provinceColors[provinceName] || "#dddddd";
+    const opacity = count > 0 ? Math.min(0.3 + count * 0.05, 0.9) : 0.15;
+    return { color: baseColor, opacity: opacity };
+  }
+
+  // Chuẩn hoá tên tỉnh/thành để so khớp tiếng Việt - không dấu
+  function normalizeProvinceName(name) {
+    if (!name) return "";
+    return name
+      .normalize("NFD") // tách dấu tiếng Việt
+      .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase()
+      .replace(/tp\.?|tinh|thanhpho|thanh pho/g, "") // bỏ tiền tố hành chính
+      .replace(/[^a-z0-9]/g, "") // bỏ mọi ký tự đặc biệt, khoảng trắng, gạch nối
+      .trim();
+  }
+
+  function updateProvinceColors() {
+    if (!provincesLayer) return;
+
+    provincesLayer.eachLayer((layer) => {
+      const name =
+        layer.feature?.properties?.NAME_1 ||
+        layer.feature?.properties?.VARNAME_1 ||
+        "";
+      const normalizedGeo = normalizeProvinceName(name);
+
+      const matchingKey = Object.keys(provinceCinemaCounts).find(
+        (p) => normalizeProvinceName(p) === normalizedGeo
+      );
+
+      const count = provinceCinemaCounts[matchingKey] || 0;
+      const { color, opacity } = getColorByCount(matchingKey, count);
+
+      layer.setStyle({
+        fillColor: color,
+        fillOpacity: opacity,
+        color: "#333",
+        weight: 1,
+      });
+
+      layer.options.originalStyle = {
+        fillColor: color,
+        fillOpacity: opacity,
+        color: "#333",
+        weight: 1,
+      };
+
+      layer.bindTooltip(`${name}: ${count} rạp`, {
+        sticky: true,
+        direction: "center",
+        opacity: 0.95,
+      });
+    });
+
+    provincesLayer.bringToBack();
   }
 
   function renderMarkers(list) {
@@ -204,7 +303,7 @@ document.addEventListener("DOMContentLoaded", function () {
     map.closePopup();
   }
 
-  // 3️⃣ Xử lý tìm kiếm
+  // Xử lý tìm kiếm
   function setupSearch() {
     const searchForm = document.getElementById("cinemaSearchForm");
     const searchInput = document.getElementById("searchInput");
@@ -265,21 +364,21 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("statCanThoCinemas").innerText = totalUniqueMovies;
   }
 
-  // 4️⃣ Xử lý lọc
+  // Xử lý lọc
   function setupFilter() {
-      const btnFilter = document.getElementById("btnFilter");
-      const filterProvince = document.getElementById("filterProvince");
-      btnFilter.addEventListener("click", () => {
-          const province = filterProvince.value.trim();
-          let filtered = cinemas;
-          if (province) {
-              filtered = cinemas.filter((c) => c.province === province);
-          }
-          renderMarkers(filtered);
-      });
+    const btnFilter = document.getElementById("btnFilter");
+    const filterProvince = document.getElementById("filterProvince");
+    btnFilter.addEventListener("click", () => {
+      const province = filterProvince.value.trim();
+      let filtered = cinemas;
+      if (province) {
+        filtered = cinemas.filter((c) => c.province === province);
+      }
+      renderMarkers(filtered);
+    });
   }
 
-  // 5️⃣ Xử lý thống kê
+  // Xử lý thống kê
   function setupStatsChart() {
     const statsCollapseEl = document.getElementById("statsCollapse");
     statsCollapseEl.addEventListener("shown.bs.collapse", function () {
