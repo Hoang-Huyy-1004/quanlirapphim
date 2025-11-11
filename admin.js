@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("✅ JS loaded thành công");
   // API của chúng ta trỏ đến tệp PHP
-  const apiUrl = 'http://localhost/quanlirapphim/api.php';
+  const apiUrl = "http://localhost/HTTT_DL/quanlirapphim/api.php";
+  // const apiUrl = "http://localhost/quanlirapphim/api.php";
 
   const form = document.getElementById("cinema-form");
   const tableBody = document.getElementById("cinema-table-body");
@@ -50,38 +52,32 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Lấy dữ liệu từ form
-    const cinemaData = {
-      id: cinemaIdInput.value ? parseInt(cinemaIdInput.value) : null,
-      name: nameInput.value,
-      province: provinceInput.value,
-      address: addressInput.value,
-      latitude: parseFloat(latitudeInput.value),
-      longitude: parseFloat(longitudeInput.value),
-      screens: parseInt(screensInput.value) || 0,
-      movies: moviesInput.value
-        .split(",")
-        .map((m) => m.trim())
-        .filter((m) => m),
-    };
-
-    const id = cinemaData.id;
+    const id = cinemaIdInput.value ? parseInt(cinemaIdInput.value) : null;
 
     try {
-      if (id) {
-        // SỬA
-        await fetch(apiUrl, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cinemaData),
-        });
-      } else {
-        await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cinemaData),
-        });
+      // Tạo formData cho cả thêm và sửa
+      const formData = new FormData();
+      formData.append("id", id || "");
+      formData.append("name", nameInput.value);
+      formData.append("province", provinceInput.value);
+      formData.append("address", addressInput.value);
+      formData.append("latitude", latitudeInput.value);
+      formData.append("longitude", longitudeInput.value);
+      formData.append("screens", screensInput.value);
+      formData.append("movies", moviesInput.value);
+
+      const fileInput = document.getElementById("image");
+      if (fileInput.files.length > 0) {
+        formData.append("image", fileInput.files[0]);
       }
+
+      console.log([...formData.entries()]);
+
+      await fetch(apiUrl, {
+        method: "POST", // dùng POST cho cả thêm và sửa
+        body: formData,
+      });
+
       resetForm();
       fetchCinemas();
     } catch (error) {

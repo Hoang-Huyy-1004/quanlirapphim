@@ -3,8 +3,7 @@ $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "cinema_gis";
-$port = 3307;
-// $port = 3306; 
+$port = 3306;
 //Đổi lại port của mình đang sử dụng
 // Cho phép JavaScript từ bất kỳ đâu gọi (CORS)
 header("Access-Control-Allow-Origin: *");
@@ -40,28 +39,63 @@ switch ($method) {
 
     // THÊM MỚI
     case 'POST':
-        $data = json_decode(file_get_contents("php://input"));
-        
-        $sql = $conn->prepare("INSERT INTO cinemas (name, address, province, screens, movies, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $moviesJson = json_encode($data->movies); // Chuyển mảng phim thành chuỗi JSON
-        $sql->bind_param("sssisdd", $data->name, $data->address, $data->province, $data->screens, $moviesJson, $data->latitude, $data->longitude);
-        
-        if ($sql->execute()) {
-            echo json_encode(["message" => "Thêm rạp thành công", "id" => $conn->insert_id]);
-        } else {
-            echo json_encode(["error" => "Thêm rạp thất bại: " . $conn->error]);
+        // Nếu có id => UPDATE, nếu không => INSERT
+        $id = $_POST['id'] ?? null;
+        $name = $_POST['name'] ?? '';
+        $address = $_POST['address'] ?? '';
+        $province = $_POST['province'] ?? '';
+        $screens = intval($_POST['screens'] ?? 0);
+        $movies = json_encode(explode(',', $_POST['movies'] ?? ''));
+        $latitude = floatval($_POST['latitude'] ?? 0);
+        $longitude = floatval($_POST['longitude'] ?? 0);
+        $image_url = null;
+
+        // --- Xử lý ảnh (nếu có)
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $targetDir = __DIR__ . "/images/"; // đường dẫn tuyệt đối
+            if (!is_dir($targetDir))
+                mkdir($targetDir, 0777, true);
+
+            $fileName = time() . "_" . basename($_FILES['image']['name']);
+            $targetFile = $targetDir . $fileName;
+
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
+                $image_url = "images/" . $fileName; // chỉ lưu đường dẫn tương đối vào DB
+            }
         }
-        $sql->close();
+
+        if ($id) {
+            // --- Cập nhật rạp (nếu không upload ảnh mới thì giữ ảnh cũ)
+            $old = $conn->query("SELECT image_url FROM cinemas WHERE id=$id")->fetch_assoc();
+            if (!$image_url)
+                $image_url = $old['image_url'];
+
+            $stmt = $conn->prepare("UPDATE cinemas 
+                                SET name=?, address=?, province=?, screens=?, movies=?, latitude=?, longitude=?, image_url=? 
+                                WHERE id=?");
+            $stmt->bind_param("sssisddsi", $name, $address, $province, $screens, $movies, $latitude, $longitude, $image_url, $id);
+            $stmt->execute();
+            echo json_encode(["message" => "Cập nhật thành công"]);
+            $stmt->close();
+        } else {
+            // --- Thêm rạp mới
+            $stmt = $conn->prepare("INSERT INTO cinemas (name, address, province, screens, movies, latitude, longitude, image_url) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssisdds", $name, $address, $province, $screens, $movies, $latitude, $longitude, $image_url);
+            $stmt->execute();
+            echo json_encode(["message" => "Thêm rạp thành công"]);
+            $stmt->close();
+        }
         break;
 
     // SỬA
     case 'PUT':
         $data = json_decode(file_get_contents("php://input"));
-        
+
         $sql = $conn->prepare("UPDATE cinemas SET name=?, address=?, province=?, screens=?, movies=?, latitude=?, longitude=? WHERE id=?");
         $moviesJson = json_encode($data->movies);
         $sql->bind_param("sssisddi", $data->name, $data->address, $data->province, $data->screens, $moviesJson, $data->latitude, $data->longitude, $data->id);
-        
+
         if ($sql->execute()) {
             echo json_encode(["message" => "Cập nhật thành công"]);
         } else {
@@ -76,10 +110,10 @@ switch ($method) {
             echo json_encode(["error" => "Cần ID để xóa"]);
             break;
         }
-        
+
         $sql = $conn->prepare("DELETE FROM cinemas WHERE id = ?");
         $sql->bind_param("i", $id);
-        
+
         if ($sql->execute()) {
             echo json_encode(["message" => "Xóa thành công"]);
         } else {

@@ -13,7 +13,7 @@
     <div class="container mt-5">
       <h2>Quản Trị Hệ Thống Rạp Phim</h2>
 
-      <form id="cinema-form" class="mb-4 p-4 border rounded">
+      <form id="cinema-form" class="mb-4 p-4 border rounded" enctype="multipart/form-data">
         <h4 id="form-title">Thêm Rạp Mới</h4>
         <input type="hidden" id="cinema-id" />
         <div class="row">
@@ -29,6 +29,17 @@
         <div class="mb-3">
           <label class="form-label">Địa chỉ</label>
           <input type="text" id="address" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label for="image" class="form-label">Ảnh rạp phim</label>
+          <input type="file" id="image" accept="image/*" class="form-control" />
+          <div id="preview-container" style="margin-top: 6px">
+            <img
+              id="preview-image"
+              src=""
+              style="max-width: 160px; border-radius: 8px; display: none"
+            />
+          </div>
         </div>
         <div class="row">
           <div class="col-md-4 mb-3">

@@ -207,17 +207,29 @@ document.addEventListener("DOMContentLoaded", function () {
           : "";
       const screensHtml = c.screens ? `<br>Số phòng: ${c.screens}` : "";
 
+      // ĐỔI LẠI ĐƯỜNG DẪN CỦA MÌNH
+      const imageHtml = c.image_url
+            ? `<div style="text-align:center;margin:6px 0;">
+          <img src="http://localhost/HTTT_DL/quanlirapphim/${c.image_url}"
+                alt="${c.name}" 
+                style="width:100%;max-width:220px;border-radius:8px;">
+        </div>`
+        : "";
+
       const popupContent = `
-        <strong>${c.name}</strong><br>
-        ${c.address}
-        ${screensHtml}
-        ${movieHtml}
-        <br>
-        <button class="btn btn-primary btn-sm btn-directions" 
-                data-lat="${c.latitude}" 
-                data-lon="${c.longitude}">
-          <i class="fas fa-directions"></i> Chỉ đường
-        </button>
+        <div style="max-width:240px;">
+          <strong>${c.name}</strong><br>
+          ${c.address}
+          ${imageHtml}
+          ${screensHtml}
+          ${movieHtml}
+          <br>
+          <button class="btn btn-primary btn-sm btn-directions" 
+                  data-lat="${c.latitude}" 
+                  data-lon="${c.longitude}">
+            <i class="fas fa-directions"></i> Chỉ đường
+          </button>
+        </div>
       `;
 
       const marker = L.marker([c.latitude, c.longitude])
