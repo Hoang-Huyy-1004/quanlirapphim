@@ -201,19 +201,29 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     list.forEach((c) => {
+      const name = c.name.toLowerCase();
+      let iconUrl = "https://cdn-icons-png.flaticon.com/512/684/684908.png"; // mặc định (màu xám)
+
+      if (name.includes("cgv")) {
+        iconUrl = "icons/icon-CGV.png";
+      } else if (name.includes("lotte")) {
+        iconUrl = "icons/icon-lotte.png";
+      } else if (name.includes("dcine")) {
+        iconUrl = "icons/icon-bhd.png";
+      } else if (name.includes("cinestar")) {
+        iconUrl = "icons/icon-cinestar.png";
+      } else if (name.includes("galaxy")) {
+        iconUrl = "icons/icon-galaxy.png";
+      }
+
       const movieHtml =
         c.movies && c.movies.length > 0
           ? `<br><i>Đang chiếu: ${c.movies.join(", ")}</i>`
           : "";
       const screensHtml = c.screens ? `<br>Số phòng: ${c.screens}` : "";
 
-      // ĐỔI LẠI ĐƯỜNG DẪN CỦA MÌNH
       const imageHtml = c.image_url
-            ? `<div style="text-align:center;margin:6px 0;">
-          <img src="http://localhost/HTTT_DL/quanlirapphim/${c.image_url}"
-                alt="${c.name}" 
-                style="width:100%;max-width:220px;border-radius:8px;">
-        </div>`
+        ? `<br><img src="${c.image_url}" style="width:100%;max-width:200px;border-radius:8px;margin-top:6px;">`
         : "";
 
       const popupContent = `
@@ -232,9 +242,17 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
       `;
 
-      const marker = L.marker([c.latitude, c.longitude])
+      const marker = L.marker([c.latitude, c.longitude], {
+        icon: L.icon({
+          iconUrl: iconUrl,
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+          popupAnchor: [0, -32],
+        }),
+      })
         .addTo(map)
         .bindPopup(popupContent);
+
       markers.push(marker);
     });
 
