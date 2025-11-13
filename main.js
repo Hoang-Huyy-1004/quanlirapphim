@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let chartDrawn = false;
   let provincesLayer = null; // Lớp GeoJSON các tỉnh
   let provinceCinemaCounts = {};
+  // Biến theo dõi tỉnh đang được lọc (đã chuẩn hoá không dấu)
+  let activeProvinceNormalized = null;
   const provinceColors = {
     "Cần Thơ": "#ff6384",
     "Vĩnh Long": "#36a2eb",
@@ -29,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let cinemas = [];
-  const apiUrl = "http://localhost/HTTT_DL/quanlirapphim/api.php";
+  const apiUrl = "http://localhost/quanlirapphim/api.php";
   // const apiUrl = "http://localhost/quanlirapphim/api.php";
 
   async function loadDataAndInit() {
@@ -43,7 +45,8 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("✅ Dữ liệu từ API:", cinemas);
 
       calculateProvinceCounts(cinemas);
-      updateProvinceColors();
+      // Theo yêu cầu: mặc định KHÔNG tô màu tỉnh nào cả
+      resetProvinceStylesNeutral();
 
       updateStatCards(cinemas);
       getLocation();
@@ -71,7 +74,8 @@ document.addEventListener("DOMContentLoaded", function () {
             color: "#444",
             weight: 1,
             fillColor: "#cccccc",
-            fillOpacity: 0.3,
+            // Mặc định không tô màu (trong suốt)
+            fillOpacity: 0,
           };
         },
         onEachFeature: function (feature, layer) {
@@ -86,26 +90,14 @@ document.addEventListener("DOMContentLoaded", function () {
             color: "#444",
             weight: 1,
             fillColor: "#cccccc",
-            fillOpacity: 0.3,
+            // Lưu style trung tính để có thể reset
+            fillOpacity: 0,
           };
 
           layer.on({
-            mouseover: function (e) {
-              const target = e.target;
-              target.setStyle({
-                weight: 2,
-                color: "#ff6600",
-                fillOpacity: 0.9,
-              });
-              if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                target.bringToFront();
-              }
-            },
-            mouseout: function (e) {
-              const target = e.target;
-              const original = target.options.originalStyle;
-              target.setStyle(original);
-            },
+            // Bỏ hoàn toàn hiệu ứng hover (không đổi style khi di chuột)
+            mouseover: function () {},
+            mouseout: function () {},
             click: function (e) {
               map.fitBounds(e.target.getBounds(), { padding: [20, 20] });
             },
@@ -114,9 +106,32 @@ document.addEventListener("DOMContentLoaded", function () {
       }).addTo(map);
 
       provincesLayer.bringToBack();
+      // Đảm bảo khi vừa tải xong cũng ở trạng thái trung tính
+      resetProvinceStylesNeutral();
     } catch (err) {
       console.error("Lỗi tải GeoJSON:", err);
     }
+  }
+
+  // Reset tất cả tỉnh về trạng thái trung tính (không tô màu)
+  function resetProvinceStylesNeutral() {
+    if (!provincesLayer) return;
+    provincesLayer.eachLayer((layer) => {
+      const name =
+        layer.feature?.properties?.NAME_1 ||
+        layer.feature?.properties?.VARNAME_1 ||
+        "";
+      const neutral = {
+        fillColor: "#cccccc",
+        fillOpacity: 0,
+        color: "#444",
+        weight: 1,
+      };
+      layer.setStyle(neutral);
+      layer.options.originalStyle = neutral;
+      layer.bindTooltip(name, { sticky: true, direction: "center", opacity: 0.95 });
+    });
+    provincesLayer.bringToBack();
   }
 
   // Đếm số lượng rạp theo tỉnh
@@ -182,6 +197,58 @@ document.addEventListener("DOMContentLoaded", function () {
       };
 
       layer.bindTooltip(`${name}: ${count} rạp`, {
+        sticky: true,
+        direction: "center",
+        opacity: 0.95,
+      });
+    });
+
+    provincesLayer.bringToBack();
+  }
+
+  // Tô màu chỉ riêng tỉnh được chọn, làm mờ các tỉnh còn lại
+  function highlightProvince(selectedProvince) {
+    if (!provincesLayer) return;
+    const normalizedSelected = normalizeProvinceName(selectedProvince || "");
+    activeProvinceNormalized = normalizedSelected || null;
+
+    provincesLayer.eachLayer((layer) => {
+      const name =
+        layer.feature?.properties?.NAME_1 ||
+        layer.feature?.properties?.VARNAME_1 ||
+        "";
+      const normalizedGeo = normalizeProvinceName(name);
+
+      const matchingKey = Object.keys(provinceCinemaCounts).find(
+        (p) => normalizeProvinceName(p) === normalizedSelected
+      );
+      const count = provinceCinemaCounts[matchingKey] || 0;
+      const colorInfo = getColorByCount(matchingKey, count);
+
+      const isSelected =
+        activeProvinceNormalized && normalizedGeo === activeProvinceNormalized;
+
+      const style = isSelected
+        ? {
+            fillColor: colorInfo.color || "#4a90e2",
+            fillOpacity: Math.max(colorInfo.opacity || 0.6, 0.6),
+            color: "#ff6600",
+            weight: 2,
+          }
+        : {
+            fillColor: "#cccccc",
+            fillOpacity: 0.08,
+            color: "#666",
+            weight: 1,
+          };
+
+      layer.setStyle(style);
+      layer.options.originalStyle = style;
+
+      const tooltipText = isSelected
+        ? `${name}: ${count} rạp`
+        : name;
+      layer.bindTooltip(tooltipText, {
         sticky: true,
         direction: "center",
         opacity: 0.95,
@@ -405,6 +472,31 @@ document.addEventListener("DOMContentLoaded", function () {
         filtered = cinemas.filter((c) => c.province === province);
       }
       renderMarkers(filtered);
+
+          // Tô màu chỉ tỉnh được chọn; nếu bỏ chọn thì trả về chế độ tô theo số rạp
+          if (province) {
+            highlightProvince(province);
+
+            // Phóng tới polygon của tỉnh được chọn
+            if (provincesLayer) {
+              let targetBounds = null;
+              provincesLayer.eachLayer((layer) => {
+                const name =
+                  layer.feature?.properties?.NAME_1 ||
+                  layer.feature?.properties?.VARNAME_1 ||
+                  "";
+                if (normalizeProvinceName(name) === normalizeProvinceName(province)) {
+                  targetBounds = layer.getBounds();
+                }
+              });
+              if (targetBounds) {
+                map.fitBounds(targetBounds, { padding: [30, 30] });
+              }
+            }
+          } else {
+            activeProvinceNormalized = null;
+            resetProvinceStylesNeutral();
+          }
     });
   }
 

@@ -1,7 +1,7 @@
 <?php
 $servername = "localhost";
 $username = "root";
-$password = "";
+$password = "@datacuatrungtin";
 $dbname = "cinema_gis";
 $port = 3306;
 //Đổi lại port của mình đang sử dụng
